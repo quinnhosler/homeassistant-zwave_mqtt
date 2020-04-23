@@ -1,5 +1,4 @@
 """Support for Z-Wave climate devices."""
-import logging
 from typing import Optional, Tuple
 
 from openzwavemqtt.const import CommandClass
@@ -13,7 +12,6 @@ from homeassistant.components.climate.const import (
     CURRENT_HVAC_HEAT,
     CURRENT_HVAC_IDLE,
     CURRENT_HVAC_OFF,
-    DOMAIN,
     HVAC_MODE_AUTO,
     HVAC_MODE_COOL,
     HVAC_MODE_DRY,
@@ -21,9 +19,6 @@ from homeassistant.components.climate.const import (
     HVAC_MODE_HEAT,
     HVAC_MODE_HEAT_COOL,
     HVAC_MODE_OFF,
-    FAN_ON,
-    FAN_OFF,
-    FAN_AUTO,
     PRESET_AWAY,
     PRESET_BOOST,
     PRESET_NONE,
@@ -40,7 +35,6 @@ from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
 from .const import DOMAIN
 from .entity import ZWaveDeviceEntity
-
 
 REMOTEC = 0x5254
 REMOTEC_ZXT_120 = 0x8377
@@ -128,6 +122,7 @@ DEFAULT_HVAC_MODES = [
     HVAC_MODE_AUTO,
 ]
 
+
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up Z-Wave Cover from Config Entry."""
 
@@ -143,12 +138,13 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     async_dispatcher_connect(hass, "zwave_new_climate", async_add_climate)
     await hass.data[DOMAIN][config_entry.entry_id]["mark_platform_loaded"]("climate")
-    
+
 
 class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
     """Representation of a Z-Wave Climate device."""
-    
+
     def __init__(self, values):
+        """Initialize the Z-Wave climate device."""
         ZWaveDeviceEntity.__init__(self, values)
         self._target_temperature = None
         self._target_temperature_range = (None, None)
@@ -170,13 +166,15 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
         self._unit = None
         self._zxt_120 = None
         self.update_properties()
-    
+
     @callback
-    def value_changed(self,value):
+    def value_changed(self, value):
+        """Update after value change."""
         self.update()
         super().value_changed(value)
-        
+
     def update(self):
+        """Update Properties."""
         self.update_properties()
 
     def _mode(self) -> None:
@@ -204,7 +202,7 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
         if self._preset_list:
             support |= SUPPORT_PRESET_MODE
         return support
-        
+
     def update_properties(self):
         """Handle the data changes for node values."""
         self._update_operation_mode()
@@ -222,7 +220,7 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
             self._hvac_mapping = {}
             self._preset_list = []
             self._preset_mapping = {}
-            
+
             mode_list = self._mode().value_list
             if mode_list:
                 for mode in mode_list:
@@ -290,7 +288,6 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
                 # The current mode is a hvac mode
                 self._hvac_mode = _hvac_temp
                 self._preset_mode = PRESET_NONE
-
 
     def _update_current_temp(self):
         """Update current temperature."""
@@ -369,7 +366,11 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
     @property
     def temperature_unit(self):
         """Return the unit of measurement."""
-        return TEMP_FAHRENHEIT
+        if self._unit == "C":
+            return TEMP_CELSIUS
+        if self._unit == "F":
+            return TEMP_FAHRENHEIT
+        return self._unit
 
     @property
     def current_temperature(self):
@@ -421,9 +422,8 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
 
     @property
     def preset_modes(self):
-        """Return the list of available preset operation modes.
-        Need to be a subset of PRESET_MODES.
-        """
+        """Return the list of available preset operation modes."""
+        """Need to be a subset of PRESET_MODES."""
         if self._mode():
             return self._preset_list
         return []
@@ -517,6 +517,7 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
         if self._fan_action:
             data[ATTR_FAN_ACTION] = self._fan_action
         return data
+
 
 class ZWaveClimateSingleSetpoint(ZWaveClimateBase):
     """Representation of a single setpoint Z-Wave thermostat device."""
