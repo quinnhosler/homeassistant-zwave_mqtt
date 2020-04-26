@@ -30,7 +30,7 @@ from homeassistant.const import ATTR_TEMPERATURE, TEMP_CELSIUS, TEMP_FAHRENHEIT
 from homeassistant.core import callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
-from .const import DOMAIN
+from .const import DATA_UNSUBSCRIBE, DOMAIN
 from .entity import ZWaveDeviceEntity
 
 VALUE_LIST = "List"
@@ -99,7 +99,7 @@ HVAC_MODE_MAPPINGS = {
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
-    """Set up Z-Wave Cover from Config Entry."""
+    """Set up Z-Wave Climate from Config Entry."""
 
     @callback
     def async_add_climate(values):
@@ -111,7 +111,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             climate = ZWaveClimateMultipleSetpoint(values)
         async_add_entities([climate])
 
-    async_dispatcher_connect(hass, "zwave_new_climate", async_add_climate)
+    hass.data[DOMAIN][config_entry.entry_id][DATA_UNSUBSCRIBE].append(
+        async_dispatcher_connect(hass, "zwave_new_climate", async_add_climate)
+    )
     await hass.data[DOMAIN][config_entry.entry_id]["mark_platform_loaded"]("climate")
 
 
@@ -120,7 +122,7 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
 
     def __init__(self, values):
         """Initialize the Z-Wave climate device."""
-        ZWaveDeviceEntity.__init__(self, values)
+        super().__init__(values)
         self._target_temperature = None
         self._target_temperature_range = (None, None)
         self._current_temperature = None
@@ -139,7 +141,7 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
     @callback
     def value_changed(self, value):
         """Update after value change."""
-        self.update()
+        self.update_properties()
         super().value_changed(value)
 
     def update(self):
@@ -186,7 +188,7 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
         self._hvac_value_label_mapping = {}
         self._hvac_label_value_mapping = {}
         values_list = self._mode().value.get(VALUE_LIST)
-        mode_values = list(map(lambda x: x.get(VALUE_ID), values_list))
+        mode_values = [value.get(VALUE_ID) for value in values_list]
         for value in mode_values:
             ha_mode = HVAC_MODE_MAPPINGS.get(value)
             if ha_mode is not None and ha_mode not in self._hvac_list:
@@ -244,7 +246,7 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
         self._fan_value_label_mapping = {}
         self._fan_label_value_mapping = {}
         self._fan_modes = []
-        for entry in self.values.fan_mode.value.get(VALUE_LIST):
+        for entry in self.values.fan_mode.value[VALUE_LIST]:
             self._fan_value_label_mapping[entry.get(VALUE_ID)] = entry.get(VALUE_LABEL)
             self._fan_label_value_mapping[entry.get(VALUE_LABEL)] = entry.get(VALUE_ID)
             self._fan_modes.append(entry.get(VALUE_ID))
