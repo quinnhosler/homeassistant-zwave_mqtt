@@ -149,10 +149,6 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
         self.update_properties()
         super().value_changed(value)
 
-    def update(self):
-        """Update Properties."""
-        self.update_properties()
-
     def _mode(self) -> None:
         """Return thermostat mode Z-Wave value."""
         raise NotImplementedError()
