@@ -109,7 +109,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             climate = ZWaveClimateSingleSetpoint(values)
         elif values.primary.command_class == CommandClass.THERMOSTAT_MODE:
             climate = ZWaveClimateMultipleSetpoint(values)
-        async_add_entities([climate])
+
+        if climate is not None:
+            async_add_entities([climate])
 
     hass.data[DOMAIN][config_entry.entry_id][DATA_UNSUBSCRIBE].append(
         async_dispatcher_connect(hass, "zwave_new_climate", async_add_climate)
@@ -258,7 +260,7 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
         self._target_temperature = None
         self._target_temperature_range = (None, None)
         if len(current_setpoints) == 1:
-            (setpoint,) = current_setpoints
+            setpoint = current_setpoints[0]
             if setpoint is not None:
                 self._target_temperature = round((float(setpoint.value)), 1)
         elif len(current_setpoints) == 2:
@@ -303,11 +305,9 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
     @property
     def temperature_unit(self):
         """Return the unit of measurement."""
-        if self._unit == "C":
-            return TEMP_CELSIUS
         if self._unit == "F":
             return TEMP_FAHRENHEIT
-        return self._unit
+        return TEMP_CELSIUS
 
     @property
     def current_temperature(self):
@@ -316,38 +316,48 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
 
     @property
     def hvac_mode(self):
-        """Return hvac operation ie. heat, cool mode."""
-        """Needs to be one of HVAC_MODE_*."""
+        """Return hvac operation ie. heat, cool mode.
+
+        Needs to be one of HVAC_MODE_*.
+        """
         if not self._mode():
             return self._default_hvac_mode
         return HVAC_MODE_MAPPINGS.get(self._hvac_mode)
 
     @property
     def hvac_modes(self):
-        """Return the list of available hvac operation modes."""
-        """Need to be a subset of HVAC_MODES."""
+        """Return the list of available hvac operation modes.
+
+        Need to be a subset of HVAC_MODES.
+        """
         if not self._mode():
             return []
         return self._hvac_list
 
     @property
     def hvac_action(self):
-        """Return the current running hvac operation if supported."""
-        """Needs to be one of CURRENT_HVAC_*."""
+        """Return the current running hvac operation if supported.
+
+        Needs to be one of CURRENT_HVAC_*.
+        """
         return self._hvac_action
 
     @property
     def preset_mode(self):
-        """Return preset operation ie. eco, away."""
-        """Needs to be one of PRESET_*."""
+        """Return preset operation ie. eco, away.
+
+        Needs to be one of PRESET_*.
+        """
         if not self._mode() or self._preset_mode == PRESET_NONE:
             return PRESET_NONE
         return self._hvac_value_label_mapping.get(self._preset_mode)
 
     @property
     def preset_modes(self):
-        """Return the list of available preset operation modes."""
-        """Need to be a subset of PRESET_MODES."""
+        """Return the list of available preset operation modes.
+
+        Need to be a subset of PRESET_MODES.
+        """
         if not self._mode():
             return []
         preset_labels = []
@@ -372,8 +382,10 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
         return self._target_temperature_range[1]
 
     def set_temperature(self, **kwargs):
-        """Set new target temperature."""
-        """Must know if single or double setpoint."""
+        """Set new target temperature.
+
+        Must know if single or double setpoint.
+        """
         current_setpoints = self._current_mode_setpoints()
         if len(current_setpoints) == 1:
             setpoint = current_setpoints[0]
