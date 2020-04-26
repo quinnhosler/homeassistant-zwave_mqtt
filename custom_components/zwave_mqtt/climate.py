@@ -97,6 +97,9 @@ HVAC_MODE_MAPPINGS = {
     0x0F: HVAC_MODE_HEAT_COOL,
 }
 
+ZW_HVAC_MODE_HEAT = 0x01
+ZW_HVAC_MODE_COOL = 0x02
+
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up Z-Wave Climate from Config Entry."""
@@ -222,12 +225,12 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
                 "heat" in current_mode_label.lower()
                 and HVAC_MODE_HEAT in self._hvac_list
             ):
-                self._hvac_mode = 0x01
+                self._hvac_mode = ZW_HVAC_MODE_HEAT
             elif (
                 "cool" in current_mode_label.lower()
                 and HVAC_MODE_COOL in self._hvac_list
             ):
-                self._hvac_mode = 0x02
+                self._hvac_mode = ZW_HVAC_MODE_COOL
             else:
                 self._hvac_mode = self._default_hvac_mode
             self._preset_mode = current_mode_value
