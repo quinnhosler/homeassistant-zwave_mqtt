@@ -380,7 +380,7 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
         """Return the highbound target temperature we try to reach."""
         return self._target_temperature_range[1]
 
-    def set_temperature(self, **kwargs):
+    async def async_set_temperature(self, **kwargs):
         """Set new target temperature.
 
         Must know if single or double setpoint.
@@ -400,21 +400,21 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
             if setpoint_high is not None and target_temp_high is not None:
                 setpoint_high.send_value(target_temp_high)
 
-    def set_fan_mode(self, fan_mode_label):
+    async def async_set_fan_mode(self, fan_mode_label):
         """Set new target fan mode."""
         if not self.values.fan_mode:
             return
         fan_mode_value = self._fan_label_value_mapping.get(fan_mode_label)
         self.values.fan_mode.send_value(fan_mode_value)
 
-    def set_hvac_mode(self, hvac_mode_label):
+    async def async_set_hvac_mode(self, hvac_mode_label):
         """Set new target hvac mode."""
         if not self._mode():
             return
         hvac_mode_value = self._hvac_label_value_mapping[hvac_mode_label.lower()]
         self._mode().send_value(hvac_mode_value)
 
-    def set_preset_mode(self, preset_mode_label):
+    async def async_set_preset_mode(self, preset_mode_label):
         """Set new target preset mode."""
         if not self._mode():
             return
