@@ -80,8 +80,7 @@ DEFAULT_HVAC_MODES = [
     HVAC_MODE_AUTO,
 ]
 
-# ZW 1.6 mode to HASS HVAC_MODE Mapping
-HVAC_MODE_MAPPINGS = {
+ZW_HVAC_MODE_MAPPINGS = {
     0x00: HVAC_MODE_OFF,
     0x01: HVAC_MODE_HEAT,
     0x02: HVAC_MODE_COOL,
@@ -97,8 +96,15 @@ HVAC_MODE_MAPPINGS = {
     0x0F: HVAC_MODE_HEAT_COOL,
 }
 
-ZW_HVAC_MODE_HEAT = 0x01
-ZW_HVAC_MODE_COOL = 0x02
+HVAC_MODE_ZW_MAPPINGS = {
+    HVAC_MODE_OFF: 0x00,
+    HVAC_MODE_HEAT: 0x01,
+    HVAC_MODE_COOL: 0x02,
+    HVAC_MODE_AUTO: 0x03,
+    HVAC_MODE_FAN_ONLY: 0x06,
+    HVAC_MODE_DRY: 0x08,
+    HVAC_MODE_HEAT_COOL: 0x0A,
+}
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
@@ -144,10 +150,9 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
         self.update_properties()
 
     @callback
-    def _value_changed(self, value):
+    def on_value_update(self):
         """Update after value change."""
         self.update_properties()
-        super()._value_changed(value)
 
     def _mode(self) -> None:
         """Return thermostat mode Z-Wave value."""
@@ -191,7 +196,7 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
         values_list = self._mode().value[VALUE_LIST]
         mode_values = [value[VALUE_ID] for value in values_list]
         for value in mode_values:
-            ha_mode = HVAC_MODE_MAPPINGS.get(value)
+            ha_mode = ZW_HVAC_MODE_MAPPINGS.get(value)
             if ha_mode is not None and ha_mode not in self._hvac_list:
                 self._hvac_list.append(ha_mode)
             else:
@@ -212,7 +217,7 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
                 break
 
         current_mode_value = self._mode().value[VALUE_SELECTED]
-        if current_mode_value in HVAC_MODE_MAPPINGS:
+        if current_mode_value in ZW_HVAC_MODE_MAPPINGS:
             self._zw_hvac_mode = current_mode_value
             self._preset_mode = PRESET_NONE
         else:
@@ -221,12 +226,12 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
                 "heat" in current_mode_label.lower()
                 and HVAC_MODE_HEAT in self._hvac_list
             ):
-                self._zw_hvac_mode = ZW_HVAC_MODE_HEAT
+                self._zw_hvac_mode = HVAC_MODE_ZW_MAPPINGS[HVAC_MODE_HEAT]
             elif (
                 "cool" in current_mode_label.lower()
                 and HVAC_MODE_COOL in self._hvac_list
             ):
-                self._zw_hvac_mode = ZW_HVAC_MODE_COOL
+                self._zw_hvac_mode = HVAC_MODE_ZW_MAPPINGS[HVAC_MODE_COOL]
             else:
                 self._zw_hvac_mode = self._default_hvac_mode
             self._preset_mode = current_mode_value
@@ -321,7 +326,7 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
         """
         if not self._mode():
             return self._default_hvac_mode
-        return HVAC_MODE_MAPPINGS[self._zw_hvac_mode]
+        return ZW_HVAC_MODE_MAPPINGS[self._zw_hvac_mode]
 
     @property
     def hvac_modes(self):
@@ -411,7 +416,7 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
         """Set new target hvac mode."""
         if not self._mode():
             return
-        hvac_mode_value = self._hvac_label_value_mapping.get(hvac_mode.lower())
+        hvac_mode_value = HVAC_MODE_ZW_MAPPINGS[hvac_mode]
         self._preset_mode = PRESET_NONE
         self._mode().send_value(hvac_mode_value)
 
