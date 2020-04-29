@@ -133,7 +133,7 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
         self._current_temperature = None
         self._hvac_action = None
         self._hvac_list = None
-        self._hvac_mode = None
+        self._zw_hvac_mode = None
         self._default_hvac_mode = None
         self._preset_list = None
         self._preset_mode = None
@@ -213,7 +213,7 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
 
         current_mode_value = self._mode().value.get(VALUE_SELECTED)
         if current_mode_value in HVAC_MODE_MAPPINGS:
-            self._hvac_mode = current_mode_value
+            self._zw_hvac_mode = current_mode_value
             self._preset_mode = PRESET_NONE
         else:
             current_mode_label = self._hvac_value_label_mapping.get(current_mode_value)
@@ -221,14 +221,14 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
                 "heat" in current_mode_label.lower()
                 and HVAC_MODE_HEAT in self._hvac_list
             ):
-                self._hvac_mode = ZW_HVAC_MODE_HEAT
+                self._zw_hvac_mode = ZW_HVAC_MODE_HEAT
             elif (
                 "cool" in current_mode_label.lower()
                 and HVAC_MODE_COOL in self._hvac_list
             ):
-                self._hvac_mode = ZW_HVAC_MODE_COOL
+                self._zw_hvac_mode = ZW_HVAC_MODE_COOL
             else:
-                self._hvac_mode = self._default_hvac_mode
+                self._zw_hvac_mode = self._default_hvac_mode
             self._preset_mode = current_mode_value
 
     def _update_current_temp(self):
@@ -321,7 +321,7 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
         """
         if not self._mode():
             return self._default_hvac_mode
-        return HVAC_MODE_MAPPINGS.get(self._hvac_mode)
+        return HVAC_MODE_MAPPINGS.get(self._zw_hvac_mode)
 
     @property
     def hvac_modes(self):
@@ -419,7 +419,7 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
         if not self._mode():
             return
         if preset_mode_label == PRESET_NONE:
-            self._mode().send_value(self._hvac_mode)
+            self._mode().send_value(self._zw_hvac_mode)
         else:
             preset_mode_value = self._hvac_label_value_mapping.get(
                 preset_mode_label.lower()
