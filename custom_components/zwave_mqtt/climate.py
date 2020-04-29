@@ -188,8 +188,8 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
         self._preset_list = []
         self._hvac_value_label_mapping = {}
         self._hvac_label_value_mapping = {}
-        values_list = self._mode().value.get(VALUE_LIST)
-        mode_values = [value.get(VALUE_ID) for value in values_list]
+        values_list = self._mode().value[VALUE_LIST]
+        mode_values = [value[VALUE_ID] for value in values_list]
         for value in mode_values:
             ha_mode = HVAC_MODE_MAPPINGS.get(value)
             if ha_mode is not None and ha_mode not in self._hvac_list:
@@ -198,9 +198,9 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
                 self._preset_list.append(value)
             label = next(
                 (
-                    entry.get(VALUE_LABEL)
+                    entry[VALUE_LABEL]
                     for entry in values_list
-                    if value == entry.get(VALUE_ID)
+                    if value == entry[VALUE_ID]
                 )
             )
             self._hvac_value_label_mapping[value] = label
@@ -211,12 +211,12 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
                 self._default_hvac_mode = mode
                 break
 
-        current_mode_value = self._mode().value.get(VALUE_SELECTED)
+        current_mode_value = self._mode().value[VALUE_SELECTED]
         if current_mode_value in HVAC_MODE_MAPPINGS:
             self._zw_hvac_mode = current_mode_value
             self._preset_mode = PRESET_NONE
         else:
-            current_mode_label = self._hvac_value_label_mapping.get(current_mode_value)
+            current_mode_label = self._hvac_value_label_mapping[current_mode_value]
             if (
                 "heat" in current_mode_label.lower()
                 and HVAC_MODE_HEAT in self._hvac_list
@@ -248,10 +248,10 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
         self._fan_label_value_mapping = {}
         self._fan_modes = []
         for entry in self.values.fan_mode.value[VALUE_LIST]:
-            self._fan_value_label_mapping[entry.get(VALUE_ID)] = entry.get(VALUE_LABEL)
-            self._fan_label_value_mapping[entry.get(VALUE_LABEL)] = entry.get(VALUE_ID)
-            self._fan_modes.append(entry.get(VALUE_ID))
-        self._current_fan_mode = self.values.fan_mode.value.get(VALUE_SELECTED)
+            self._fan_value_label_mapping[entry[VALUE_ID]] = entry[VALUE_LABEL]
+            self._fan_label_value_mapping[entry[VALUE_LABEL]] = entry[VALUE_ID]
+            self._fan_modes.append(entry[VALUE_ID])
+        self._current_fan_mode = self.values.fan_mode.value[VALUE_SELECTED]
 
     def _update_target_temp(self):
         """Update target temperature."""
@@ -289,7 +289,7 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
         """Return the fan speed set."""
         if self._current_fan_mode is None:
             return None
-        return self._fan_value_label_mapping.get(self._current_fan_mode)
+        return self._fan_value_label_mapping[self._current_fan_mode]
 
     @property
     def fan_modes(self):
@@ -298,7 +298,7 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
             return None
         fan_mode_labels = []
         for mode_value in self._fan_modes:
-            fan_mode_labels.append(self._fan_value_label_mapping.get(mode_value))
+            fan_mode_labels.append(self._fan_value_label_mapping[mode_value])
         return fan_mode_labels
 
     @property
@@ -321,7 +321,7 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
         """
         if not self._mode():
             return self._default_hvac_mode
-        return HVAC_MODE_MAPPINGS.get(self._zw_hvac_mode)
+        return HVAC_MODE_MAPPINGS[self._zw_hvac_mode]
 
     @property
     def hvac_modes(self):
@@ -349,7 +349,7 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
         """
         if not self._mode() or self._preset_mode == PRESET_NONE:
             return PRESET_NONE
-        return self._hvac_value_label_mapping.get(self._preset_mode)
+        return self._hvac_value_label_mapping[self._preset_mode]
 
     @property
     def preset_modes(self):
@@ -361,7 +361,7 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
             return []
         preset_labels = []
         for value in self._preset_list:
-            preset_labels.append(self._hvac_value_label_mapping.get(value))
+            preset_labels.append(self._hvac_value_label_mapping[value])
         preset_labels.append(PRESET_NONE)
         return preset_labels
 
@@ -404,7 +404,7 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
         """Set new target fan mode."""
         if not self.values.fan_mode:
             return
-        fan_mode_value = self._fan_label_value_mapping.get(fan_mode_label)
+        fan_mode_value = self._fan_label_value_mapping[fan_mode_label]
         self.values.fan_mode.send_value(fan_mode_value)
 
     async def async_set_hvac_mode(self, hvac_mode_label):
@@ -421,9 +421,9 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
         if preset_mode_label == PRESET_NONE:
             self._mode().send_value(self._zw_hvac_mode)
         else:
-            preset_mode_value = self._hvac_label_value_mapping.get(
+            preset_mode_value = self._hvac_label_value_mapping[
                 preset_mode_label.lower()
-            )
+            ]
             self._mode().send_value(preset_mode_value)
 
     @property
