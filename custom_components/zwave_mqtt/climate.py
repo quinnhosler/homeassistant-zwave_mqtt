@@ -85,7 +85,7 @@ HVAC_MODE_MAPPINGS = {
     0x00: HVAC_MODE_OFF,
     0x01: HVAC_MODE_HEAT,
     0x02: HVAC_MODE_COOL,
-    0x03: HVAC_MODE_HEAT_COOL,
+    0x03: HVAC_MODE_AUTO,
     0x04: HVAC_MODE_HEAT,
     0x06: HVAC_MODE_FAN_ONLY,
     0x07: HVAC_MODE_HEAT,
@@ -144,10 +144,10 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
         self.update_properties()
 
     @callback
-    def value_changed(self, value):
+    def _value_changed(self, value):
         """Update after value change."""
         self.update_properties()
-        super().value_changed(value)
+        super()._value_changed(value)
 
     def _mode(self) -> None:
         """Return thermostat mode Z-Wave value."""
@@ -276,7 +276,7 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
         if not self.values.operating_state:
             return
         mode = self.values.operating_state.value
-        self._hvac_action = HVAC_CURRENT_MAPPINGS.get(str(mode).lower(), mode)
+        self._hvac_action = HVAC_CURRENT_MAPPINGS.get(str(mode).lower())
 
     def _update_fan_state(self):
         """Update fan state."""
@@ -400,30 +400,29 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
             if setpoint_high is not None and target_temp_high is not None:
                 setpoint_high.send_value(target_temp_high)
 
-    async def async_set_fan_mode(self, fan_mode_label):
+    async def async_set_fan_mode(self, fan_mode):
         """Set new target fan mode."""
         if not self.values.fan_mode:
             return
-        fan_mode_value = self._fan_label_value_mapping[fan_mode_label]
+        fan_mode_value = self._fan_label_value_mapping[fan_mode]
         self.values.fan_mode.send_value(fan_mode_value)
 
-    async def async_set_hvac_mode(self, hvac_mode_label):
+    async def async_set_hvac_mode(self, hvac_mode):
         """Set new target hvac mode."""
         if not self._mode():
             return
-        hvac_mode_value = self._hvac_label_value_mapping[hvac_mode_label.lower()]
+        hvac_mode_value = self._hvac_label_value_mapping.get(hvac_mode.lower())
+        self._preset_mode = PRESET_NONE
         self._mode().send_value(hvac_mode_value)
 
-    async def async_set_preset_mode(self, preset_mode_label):
+    async def async_set_preset_mode(self, preset_mode):
         """Set new target preset mode."""
         if not self._mode():
             return
-        if preset_mode_label == PRESET_NONE:
+        if preset_mode == PRESET_NONE:
             self._mode().send_value(self._zw_hvac_mode)
         else:
-            preset_mode_value = self._hvac_label_value_mapping[
-                preset_mode_label.lower()
-            ]
+            preset_mode_value = self._hvac_label_value_mapping[preset_mode.lower()]
             self._mode().send_value(preset_mode_value)
 
     @property
