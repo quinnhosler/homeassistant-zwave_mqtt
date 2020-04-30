@@ -2,7 +2,16 @@
 
 DOMAIN = "zwave_mqtt"
 DATA_UNSUBSCRIBE = "unsubscribe"
-PLATFORMS = ["binary_sensor", "cover", "climate", "fan", "sensor", "switch", "light"]
+PLATFORMS = [
+    "binary_sensor",
+    "cover",
+    "climate",
+    "lock",
+    "fan",
+    "sensor",
+    "switch",
+    "light",
+]
 
 # MQTT Topics
 TOPIC_OPENZWAVE = "OpenZWave"

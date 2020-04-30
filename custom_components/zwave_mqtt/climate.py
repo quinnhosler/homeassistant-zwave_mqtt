@@ -27,7 +27,7 @@ from homeassistant.components.climate.const import (
     SUPPORT_TARGET_TEMPERATURE,
     SUPPORT_TARGET_TEMPERATURE_RANGE,
 )
-from homeassistant.const import ATTR_TEMPERATURE, TEMP_CELSIUS, TEMP_FAHRENHEIT
+from homeassistant.const import ATTR_TEMPERATURE, TEMP_FAHRENHEIT
 from homeassistant.core import callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
@@ -338,9 +338,10 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
     @property
     def temperature_unit(self):
         """Return the unit of measurement."""
-        if self._unit == "F":
-            return TEMP_FAHRENHEIT
-        return TEMP_CELSIUS
+        #        if self._unit == "F":
+        return TEMP_FAHRENHEIT
+
+    #        return TEMP_CELSIUS
 
     @property
     def current_temperature(self):
