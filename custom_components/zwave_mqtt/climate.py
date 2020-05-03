@@ -1,4 +1,5 @@
 """Support for Z-Wave climate devices."""
+# import logging
 from enum import IntEnum
 from typing import Optional, Tuple
 
@@ -33,6 +34,9 @@ from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
 from .const import DATA_UNSUBSCRIBE, DOMAIN
 from .entity import ZWaveDeviceEntity
+
+# _LOGGER = logging.getLogger(__name__)
+
 
 VALUE_LIST = "List"
 VALUE_ID = "Value"
@@ -269,10 +273,19 @@ class ZWaveClimateBase(ZWaveDeviceEntity, ClimateDevice):
         """Update current temperature."""
         if not self.values.temperature:
             return
-        self._current_temperature = self.values.temperature.value
-        device_unit = self.values.temperature.units
-        if device_unit is not None:
-            self._unit = device_unit
+        self._current_temperature = self.convert_temperature(
+            self.values.temperature.value
+        )
+        self._unit = "F"
+
+    def convert_temperature(self, temp):
+        """Convert and Force Fahrenheit."""
+        #        _LOGGER.debug("convert_temperature: {}".format(temp))
+        if float(temp) < 40:
+            return round(2 * (1.8 * float(temp) + 32)) / 2
+        elif float(temp) > 100:
+            return round(2 * ((float(temp) - 32) / 1.8)) / 2
+        return temp
 
     def _update_fan_mode(self):
         """Update fan mode."""
